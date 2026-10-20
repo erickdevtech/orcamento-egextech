@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Orçamentos – Egex Tech</title>
+<style>
+:root{--bg:#f4f7f5;--card:#fff;--tx:#15201a;--mut:#5d6b63;--pri:#2e8b57;--pri-tx:#fff;--bd:#d5ded8;--acc:#e8f3ec;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1511;--card:#18211b;--tx:#e8f0ea;--mut:#9aaba0;--pri:#3aa56b;--pri-tx:#06130b;--bd:#2a362e;--acc:#1f2d24}}
+:root[data-theme="dark"]{--bg:#0f1511;--card:#18211b;--tx:#e8f0ea;--mut:#9aaba0;--pri:#3aa56b;--pri-tx:#06130b;--bd:#2a362e;--acc:#1f2d24}
+html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--pri);color:var(--pri-tx);padding:16px;text-align:center;font-weight:700;font-size:20px}
+main{max-width:480px;margin:0 auto;padding:14px;display:grid;gap:12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;display:grid;gap:10px}
+label{font-size:13px;color:var(--mut);display:grid;gap:4px}
+input{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:11px;width:100%;box-sizing:border-box}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.line{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed var(--bd)}
+.line:last-child{border:0}
+.big{background:var(--acc);border-radius:10px;padding:10px;text-align:center}
+.big b{display:block;font-size:24px}
+.big span{font-size:13px;color:var(--mut)}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button,a.btn{font:inherit;font-weight:600;border:0;border-radius:10px;padding:12px;background:var(--pri);color:var(--pri-tx);text-align:center;text-decoration:none;cursor:pointer}
+button.sec{background:var(--acc);color:var(--tx);border:1px solid var(--bd)}
+.mut{color:var(--mut);font-size:13px}
+</style>
+</head>
+<body>
+<header>Egex Tech · Orçamentos</header>
+<main>
+  <section class="card">
+    <label>Cliente (opcional)<input id="cli" placeholder="Nome do cliente"></label>
+    <label>Aparelho / serviço (opcional)<input id="srv" placeholder="Ex.: iPhone 11 – troca de tela"></label>
+    <div class="row">
+      <label>Mão de obra (R$)<input id="mo" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00"></label>
+      <label>Peça (R$)<input id="pc" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00"></label>
+    </div>
+    <div class="row">
+      <label>Taxa de parcelamento (%)<input id="tx" type="number" inputmode="decimal" step="0.01" min="0" max="99" value="13"></label>
+      <label>Parcelas<input id="np" type="number" inputmode="numeric" min="1" max="18" value="3"></label>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="big"><span>Total à vista</span><b id="vista">R$ 0,00</b></div>
+    <div class="big"><span id="plbl">Total parcelado em 3x</span><b id="parc">R$ 0,00</b></div>
+    <div class="line"><span>Valor de cada parcela</span><b id="cada">R$ 0,00</b></div>
+    <div class="line"><span>Valor da taxa</span><b id="taxa">R$ 0,00</b></div>
+    <div class="line"><span>Valor líquido (você recebe)</span><b id="liq">R$ 0,00</b></div>
+    <p class="mut" style="margin:0">Parcelado = total à vista ÷ (1 − taxa), igual à sua planilha.</p>
+  </section>
+
+  <section class="card">
+    <div class="mut">Mensagem para o cliente</div>
+    <div id="msg" class="mut" style="white-space:pre-wrap;color:var(--tx)"></div>
+    <div class="btns">
+      <button id="copy">Copiar</button>
+      <a class="btn" id="wa" target="_blank" rel="noopener">WhatsApp</a>
+    </div>
+    <button class="sec" id="clear">Limpar</button>
+  </section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const brl=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)&&v>0?v:0};
+function calc(){
+  const mo=num('mo'),pc=num('pc'),t=Math.min(num('tx'),99)/100;
+  const n=Math.max(1,Math.round(num('np'))||1);
+  const vista=mo+pc;
+  const parc=vista/(1-t);
+  const cada=parc/n;
+  const taxa=parc-vista;
+  $('vista').textContent=brl(vista);
+  $('parc').textContent=brl(parc);
+  $('plbl').textContent='Total parcelado em '+n+'x';
+  $('cada').textContent=brl(cada);
+  $('taxa').textContent=brl(taxa);
+  $('liq').textContent=brl(vista);
+  const cli=$('cli').value.trim(),srv=$('srv').value.trim();
+  let m='*Egex Tech – Orçamento*\n';
+  if(cli)m+='Cliente: '+cli+'\n';
+  if(srv)m+='Serviço: '+srv+'\n';
+  m+='\nÀ vista: '+brl(vista)+'\nParcelado em '+n+'x de '+brl(cada)+' (total '+brl(parc)+')';
+  $('msg').textContent=m;
+  $('wa').href='https://wa.me/?text='+encodeURIComponent(m);
+}
+['cli','srv','mo','pc','tx','np'].forEach(i=>$(i).addEventListener('input',calc));
+$('copy').onclick=async()=>{
+  const m=$('msg').textContent;
+  try{await navigator.clipboard.writeText(m)}catch(e){
+    const t=document.createElement('textarea');t.value=m;document.body.appendChild(t);t.select();
+    try{document.execCommand('copy')}catch(_){}t.remove();
+  }
+  $('copy').textContent='Copiado!';setTimeout(()=>$('copy').textContent='Copiar',1500);
+};
+$('clear').onclick=()=>{['cli','srv','mo','pc'].forEach(i=>$(i).value='');calc()};
+calc();
+</script>
+</body>
+</html>
